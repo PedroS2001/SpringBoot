@@ -1,29 +1,11 @@
 package com.example2.demo2.model;
 
-import java.util.List;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-
-@Entity
-@Table(name="demo_persona")
 public class PersonaModel {
 	
-	@Column(name="nombre")
 	private String nombre;
-	@Column(name="apellido")
 	private String apellido;
-	@Id
-	@Column(name="dni")
 	private Integer dni;
-	
-	@OneToMany
-	@JoinColumn(name="dni")
-	private List<Auto> autos;
+
 	
 	public PersonaModel(){
 	}

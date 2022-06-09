@@ -3,7 +3,6 @@ package com.example2.demo2.controller;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,15 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example2.demo2.model.PersonaModel;
-import com.example2.demo2.repository.PersonaRepository;
 
 @RestController
 @RequestMapping("/apiPersona")
 public class PersonaController {
 
 	List<PersonaModel> lista = new ArrayList<>();
-	@Autowired
-	private PersonaRepository personaRepository;
 
 	public PersonaController() {
 		//Hardcodeo 3 empleados y los agrego a la lista para probar
@@ -35,7 +31,7 @@ public class PersonaController {
 		lista.add(p1);
 		lista.add(p2);
 		lista.add(p3);
-	}
+	} 
 
 	@GetMapping("/message")
 	public List<String> getMessage()
@@ -57,8 +53,7 @@ public class PersonaController {
 	@GetMapping("/personas")
 	public ResponseEntity<?> getPersonas()
 	{
-		return new ResponseEntity<Iterable<PersonaModel>>(this.personaRepository.findAll(), HttpStatus.OK);
-		//return new ResponseEntity<List<PersonaModel>>( this.lista, HttpStatus.ACCEPTED);
+		return new ResponseEntity<List<PersonaModel>>( this.lista, HttpStatus.ACCEPTED);
 	}
 	
 	/**	Devuelve la persona con el dni que se le pasa como parametro
@@ -81,19 +76,6 @@ public class PersonaController {
 		return new ResponseEntity<String>("No se encontro una persona con ese DNI", HttpStatus.NOT_FOUND);
 	}
 	
-	@GetMapping("/personass/{nombre}")
-	public PersonaModel getUnaPersonaNombre( @PathVariable String nombre)
-	{
-		return this.personaRepository.findByNombre(nombre);
-	}
-	
-	@GetMapping("/personasp/{nombre}")
-	public PersonaModel buscarPorNombre( @PathVariable String nombre)
-	{
-		return this.personaRepository.bucarPorNombre(nombre);
-	}
-	
-	
 	/** Agrega una persona al array
 	 * En caso de que falte un campo, le asigna null. y si le sobra lo ignora
 	 * La persona en el postman se pasa en el body, tipo raw, formato JSON. y se pasa el JSON.
@@ -103,9 +85,8 @@ public class PersonaController {
 	@PostMapping("/persona")
 	public PersonaModel newPersona(@RequestBody PersonaModel persona)
 	{
-		return this.personaRepository.save(persona);
-		/*this.lista.add(persona); 
-		return persona;*/
+		this.lista.add(persona); 
+		return persona;
 	}
 	
 	/** Edita una persona.
