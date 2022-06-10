@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example2.demo2.model.AutoModel;
 import com.example2.demo2.model.PersonaModel;
 import com.example2.demo2.repository.PersonaRepository;
 
@@ -90,9 +91,18 @@ public class PersonaController {
 	 * @return
 	 */
 	@PostMapping("/persona")
-	public PersonaModel newPersona(@RequestBody PersonaModel persona)
+	public ResponseEntity<?> newPersona(@RequestBody PersonaModel persona)
 	{
-		return this.personaRepository.save(persona);
+		Iterable<PersonaModel> iterable = this.personaRepository.findAll();
+		for(PersonaModel p: iterable)
+		{
+			if(persona.getDni() == p.getDni())
+			{
+				return new ResponseEntity<String>("Ya existe una persona con ese DNI", HttpStatus.BAD_REQUEST);
+			}
+			
+		}
+		return new ResponseEntity<PersonaModel>(this.personaRepository.save(persona), HttpStatus.OK);
 	}
 	
 	/** Edita una persona de la base de datos
@@ -111,7 +121,7 @@ public class PersonaController {
 			
 			return new ResponseEntity<PersonaModel>(this.personaRepository.save(newPersona), HttpStatus.OK);
 		} catch (Exception e) {
-			return new ResponseEntity<String>("No se encontro al empleado", HttpStatus.NOT_FOUND);
+			return new ResponseEntity<String>("No se encontro a la persona", HttpStatus.NOT_FOUND);
 		}
 	}
 	
