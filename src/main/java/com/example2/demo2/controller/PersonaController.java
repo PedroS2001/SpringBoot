@@ -3,6 +3,7 @@ package com.example2.demo2.controller;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,12 +16,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example2.demo2.model.PersonaModel;
+import com.example2.demo2.repository.PersonaRepository;
 
 @RestController
 @RequestMapping("/apiPersona")
 public class PersonaController {
 
 	List<PersonaModel> lista = new ArrayList<>();
+	
+	@Autowired
+	private PersonaRepository personaRepository; 
 
 	public PersonaController() {
 		//Hardcodeo 3 empleados y los agrego a la lista para probar
@@ -46,37 +51,39 @@ public class PersonaController {
 		return lista;
 	}
 	
-	/** Devuelve una lista con todas las personas
+	/** Devuelve una lista con todas las personas en la base de datos
 	 * 
 	 * @return
 	 */
 	@GetMapping("/personas")
-	public ResponseEntity<?> getPersonas()
+	public ResponseEntity<?> getPersonas() 
 	{
-		return new ResponseEntity<List<PersonaModel>>( this.lista, HttpStatus.ACCEPTED);
+		return new ResponseEntity<Iterable<PersonaModel>>(this.personaRepository.findAll(), HttpStatus.OK);
 	}
 	
-	/**	Devuelve la persona con el dni que se le pasa como parametro
-	 * En caso de que no encuentre una persona con ese dni, devuelve un mensaje de erorr
+	/** Busca a una persona en la base de datos por nombre
 	 * 
-	 * @param dni
+	 * @param nombre
 	 * @return
 	 */
-	@GetMapping("/personas/{dni}")
-	public ResponseEntity<?> getUnaPersona( @PathVariable Integer dni)
-	{
-		for(PersonaModel p: this.lista)
-		{
-			if(dni.equals(p.getDni()))
-			{
-				return new ResponseEntity<PersonaModel>(p,  HttpStatus.OK);
-			}
-		}
-		
-		return new ResponseEntity<String>("No se encontro una persona con ese DNI", HttpStatus.NOT_FOUND);
+	@GetMapping("/personas/{nombre}")
+	public PersonaModel getUnaPersonaNombre( @PathVariable String nombre)
+	{ 
+		return this.personaRepository.findByNombre(nombre);
 	}
 	
-	/** Agrega una persona al array
+	/** Tambien para demostrar que puedo hacer mis propias consultar personalizadas
+	 * 
+	 * @param nombre
+	 * @return
+	 */
+	@GetMapping("/personasp/{nombre}")
+	public PersonaModel buscarPorNombre( @PathVariable String nombre)
+	{
+		return this.personaRepository.bucarPorNombre(nombre);
+	}
+	
+	/** Agrega una persona en la base de datos
 	 * En caso de que falte un campo, le asigna null. y si le sobra lo ignora
 	 * La persona en el postman se pasa en el body, tipo raw, formato JSON. y se pasa el JSON.
 	 * 
@@ -85,47 +92,57 @@ public class PersonaController {
 	@PostMapping("/persona")
 	public PersonaModel newPersona(@RequestBody PersonaModel persona)
 	{
-		this.lista.add(persona); 
-		return persona;
+		return this.personaRepository.save(persona);
 	}
 	
-	/** Edita una persona.
-	 * La busca por el dni y le cambia el nombre y apellido
+	/** Edita una persona de la base de datos
+	 * La busca por el dni, le cambia el nombre y apellido y la vuelve a guardar en la base de datos
 	 * 
 	 * @param persona
 	 * @return
 	 */
 	@PutMapping("/persona")
-	public PersonaModel editPersona(@RequestBody PersonaModel persona) {
-		
-		for(PersonaModel p :this.lista) {
-			if(persona.getDni().equals(p.getDni())) {
-				p.setApellido(persona.getApellido());
-				p.setNombre(persona.getNombre());
-				return p;
-			}		
+	public ResponseEntity<?> editPersona(@RequestBody PersonaModel persona) 
+	{
+		try {
+			PersonaModel newPersona = this.personaRepository.findById(persona.getDni()).get();
+			newPersona.setNombre(persona.getNombre());
+			newPersona.setApellido(persona.getApellido());
+			
+			return new ResponseEntity<PersonaModel>(this.personaRepository.save(newPersona), HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<String>("No se encontro al empleado", HttpStatus.NOT_FOUND);
 		}
-		return null;	
 	}
 	
-	
-	/** Elimina de la lista a la persona con el dni pasado como parametro
+	/** Busca a la persona con el dni pasado y la borra de la base de datos
+	 * Si no encuentra a la persona con ese dni lanza una excepcion que es capturada para avisar que no se encontro la persona
 	 * 
 	 * @param dni
 	 * @return
 	 */
 	@DeleteMapping("/persona/{dni}")
-	public boolean deletePersona(@PathVariable Integer dni)
+	public ResponseEntity<?> deletePersona(@PathVariable Integer dni)
 	{
-		for(PersonaModel p: this.lista)
-		{
-			if(dni.equals(p.getDni()))
-			{
-				this.lista.remove(p);
-				return true;
-			}
+		try {
+			PersonaModel persona = this.personaRepository.findById(dni).get();
+			this.personaRepository.delete(persona);
+			return new ResponseEntity<String>("Se elimino a la persona", HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<String>("No se encontro a la persona", HttpStatus.NOT_FOUND);
 		}
-		return false;
+	}
+	
+	/** Busca en la bbdd todas las personas cuyo nombre empiece con el string pasado por parametro
+	 * Devuelve una lista con todas las personas que coincidan
+	 * Si no coincide ninguna devuelve una lista vacia
+	 * @param nombre
+	 * @return
+	 */
+	@GetMapping("/personabuscar/{nombre}")
+	public List<PersonaModel> buscarEmpiezaPor(@PathVariable String nombre)
+	{
+		return this.personaRepository.bucarNombreEmpiezaPor(nombre);
 	}
 	
 	
